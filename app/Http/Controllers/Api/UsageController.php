@@ -30,15 +30,17 @@ class UsageController extends Controller
         return DB::transaction(function () use ($validated) {
             $usage = UsageEvent::create($validated);
 
-            DailyUsageAggregate::updateOrCreate(
+            $aggregate = DailyUsageAggregate::firstOrCreate(
                 [
                     'customer_id' => $validated['customer_id'],
                     'date' => $validated['usage_date'],
                 ],
                 [
-                    'total_units' => DB::raw('total_units + ' . $validated['units']),
+                    'total_units' => 0,
                 ]
             );
+            DailyUsageAggregate::where('id', $aggregate->id)
+                ->increment('total_units', $validated['units']);
 
             return response()->json([
                 'status' => 'created',
